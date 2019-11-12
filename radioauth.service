@@ -1,0 +1,11 @@
+[Unit]
+Description=RadiOauth - Radius server with OAuth backend
+
+[Service]
+User=radioauth
+ExecStart=/usr/bin/radioauth -config /etc/radioauth/config.json
+Restart=always
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

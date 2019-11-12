@@ -1,0 +1,10 @@
+{
+    "oauth_client_id": "XXX",
+    "oauth_client_secret": "XXX",
+    "oauth_issuer": "https://accounts.google.com",
+    "oauth_callback_url": "http://your.server/auth/callback",
+    "oauth_account_url": "https://myaccount.google.com/permissions",
+    "account_store_path": "/etc/radioauth/accounts",
+    "radius_secret": "XXX",
+    "http_port": 5556
+}
