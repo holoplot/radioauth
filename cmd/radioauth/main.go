@@ -34,7 +34,7 @@ var (
 )
 
 func authenticateToken(account *account.Account) bool {
-	oauth2Token := oauth2.Token{
+	storedOauth2Token := oauth2.Token{
 		AccessToken:  account.AccessToken,
 		RefreshToken: account.RefreshToken,
 		Expiry:       account.TokenExpiry,
@@ -43,7 +43,7 @@ func authenticateToken(account *account.Account) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	tokenSource := oauthConfig.TokenSource(ctx, &oauth2Token)
+	tokenSource := oauthConfig.TokenSource(ctx, &storedOauth2Token)
 
 	userinfo, err := provider.UserInfo(ctx, tokenSource)
 	if err != nil {
@@ -51,7 +51,13 @@ func authenticateToken(account *account.Account) bool {
 		return false
 	}
 
-	if !oauth2Token.Valid() {
+	currentOauth2Token, err := tokenSource.Token()
+	if err != nil {
+		log.Printf("[authenitaction] Unable to obtain OAuth Token for user %s: %v", account.Username, err)
+		return false
+	}
+
+	if !currentOauth2Token.Valid() {
 		log.Printf("[authenticate] OAuth token for user %s is invalid!", account.Username)
 		return false
 	}
@@ -67,7 +73,10 @@ func authenticateToken(account *account.Account) bool {
 	}
 
 	// Sync back the (possibly refreshed) access token
-	account.AccessToken = oauth2Token.AccessToken
+	account.AccessToken = currentOauth2Token.AccessToken
+	account.RefreshToken = currentOauth2Token.RefreshToken
+	account.TokenExpiry = currentOauth2Token.Expiry
+
 	err = accountStore.Write(account)
 	if err != nil {
 		log.Printf("[authenticate] Cannot write back account info for %s: %v", userinfo.Email, err)
