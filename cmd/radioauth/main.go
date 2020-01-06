@@ -37,6 +37,7 @@ func authenticateToken(account *account.Account) bool {
 	oauth2Token := oauth2.Token{
 		AccessToken:  account.AccessToken,
 		RefreshToken: account.RefreshToken,
+		Expiry:       account.TokenExpiry,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)

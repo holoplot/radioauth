@@ -114,6 +114,7 @@ func runHTTPServer() {
 		}
 
 		a.AccessToken = oauth2Token.AccessToken
+		a.TokenExpiry = oauth2Token.Expiry
 		err = accountStore.Write(a)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
