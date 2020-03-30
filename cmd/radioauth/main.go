@@ -15,14 +15,15 @@ import (
 )
 
 type configFile struct {
-	OAuthClientID     string `json:"oauth_client_id,omitempty"`
-	OAuthClientSecret string `json:"oauth_client_secret,omitempty"`
-	OAuthIssuer       string `json:"oauth_issuer,omitempty"`
-	OAuthCallbackURL  string `json:"oauth_callback_url,omitempty"`
-	OAuthAccountURL   string `json:"oauth_account_url,omitempty"`
-	AccountStorePath  string `json:"account_store_path,omitempty"`
-	HTTPPort          uint16 `json:"http_port,omitempty"`
-	RadiusSecret      string `json:"radius_secret,omitempty"`
+	OAuthClientID     string   `json:"oauth_client_id,omitempty"`
+	OAuthClientSecret string   `json:"oauth_client_secret,omitempty"`
+	OAuthIssuer       string   `json:"oauth_issuer,omitempty"`
+	OAuthCallbackURL  string   `json:"oauth_callback_url,omitempty"`
+	OAuthAccountURL   string   `json:"oauth_account_url,omitempty"`
+	AccountStorePath  string   `json:"account_store_path,omitempty"`
+	RedisAddresses    []string `json:"redis_addresses,omitempty"`
+	HTTPPort          uint16   `json:"http_port,omitempty"`
+	RadiusSecret      string   `json:"radius_secret,omitempty"`
 }
 
 var (
@@ -103,10 +104,20 @@ func main() {
 		return
 	}
 
-	accountStore, err = account.NewFileStore(config.AccountStorePath)
-	if err != nil {
-		log.Fatalf("Cannot create account store: %v\n", err)
-		return
+	if len(config.AccountStorePath) > 0 {
+		accountStore, err = account.NewFileStore(config.AccountStorePath)
+		if err != nil {
+			log.Fatalf("Cannot create file-backed account store: %v\n", err)
+		}
+		log.Printf("Using file-backed account store at path %s\n", config.AccountStorePath)
+	} else if len(config.RedisAddresses) > 0 {
+		accountStore, err = account.NewRedisStore(config.RedisAddresses)
+		if err != nil {
+			log.Fatalf("Cannot create redis-backed account store: %v\n", err)
+		}
+		log.Printf("Using redis-backed account store with addresses %v\n", config.RedisAddresses)
+	} else {
+		log.Fatalf("No account store available")
 	}
 
 	ctx := context.Background()
