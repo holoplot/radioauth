@@ -33,11 +33,12 @@ func runRadiusServer() {
 		}
 
 		if len(challenge) == 16 && len(response) == 50 {
+			password := []byte(account.Password)
 			// See rfc2548 - 2.3.2. MS-CHAP2-Response
 			ident := response[0]
 			peerChallenge := response[2:18]
 			peerResponse := response[26:50]
-			ntResponse, err := rfc2759.GenerateNTResponse(challenge, peerChallenge, username, account.Password)
+			ntResponse, err := rfc2759.GenerateNTResponse(challenge, peerChallenge, []byte(username), password)
 			if err != nil {
 				log.Printf("[radius] Cannot generate ntResponse for %s: %v", username, err)
 				w.Write(r.Response(radius.CodeAccessReject))
@@ -47,21 +48,21 @@ func runRadiusServer() {
 			if reflect.DeepEqual(ntResponse, peerResponse) {
 				responsePacket := r.Response(radius.CodeAccessAccept)
 
-				recvKey, err := rfc3079.MakeKey(ntResponse, account.Password, false)
+				recvKey, err := rfc3079.MakeKey(ntResponse, password, false)
 				if err != nil {
 					log.Printf("[radius] Cannot make recvKey for %s: %v", username, err)
 					w.Write(r.Response(radius.CodeAccessReject))
 					return
 				}
 
-				sendKey, err := rfc3079.MakeKey(ntResponse, account.Password, true)
+				sendKey, err := rfc3079.MakeKey(ntResponse, password, true)
 				if err != nil {
 					log.Printf("[radius] Cannot make sendKey for %s: %v", username, err)
 					w.Write(r.Response(radius.CodeAccessReject))
 					return
 				}
 
-				authenticatorResponse, err := rfc2759.GenerateAuthenticatorResponse(challenge, peerChallenge, ntResponse, username, account.Password)
+				authenticatorResponse, err := rfc2759.GenerateAuthenticatorResponse(challenge, peerChallenge, ntResponse, []byte(username), password)
 				if err != nil {
 					log.Printf("[radius] Cannot generate authenticator response for %s: %v", username, err)
 					w.Write(r.Response(radius.CodeAccessReject))
